@@ -1,0 +1,38 @@
+{
+  "name": "inverso",
+  "version": "1.0.0",
+  "description": "Herramienta gratuita para comparar inversiones en Argentina",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "scrape": "node scripts/scrape-bymadata.js"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "dependencies": {
+    "@solidjs/router": "^0.15.0",
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "autoprefixer": "^10.4.25",
+    "jsdom": "^28.1.0",
+    "playwright": "^1.58.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vite-plugin-solid": "^2.11.0",
+    "vitest": "^4.0.18"
+  },
+  "packageManager": "pnpm@10.18.2"
+}

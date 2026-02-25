@@ -1,0 +1,71 @@
+name: Actualizar Datos de Inversiones
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 9:00 AM Argentina (UTC-3)
+    - cron: '0 12 * * *'
+  
+  # Permitir ejecución manual
+  workflow_dispatch:
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
+        
+      - name: Run scraper
+        run: node scripts/scrape-bymadata.js
+        continue-on-error: true
+        
+      - name: Check if data changed
+        id: check_changes
+        run: |
+          if [ -f src/data/inversiones-scraped.json ]; then
+            git add src/data/inversiones-scraped.json
+            if git diff --cached --quiet; then
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "No hay cambios en los datos"
+            else
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "Datos actualizados detectados"
+            fi
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No se generó archivo de datos"
+          fi
+          
+      - name: Commit changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "🔄 Actualización automática de datos de inversiones
+          
+          Fecha: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Fuente: BYMADATA"
+          
+      - name: Push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
