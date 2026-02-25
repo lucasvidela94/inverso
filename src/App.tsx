@@ -5,6 +5,7 @@ import Explorar from './pages/Explorar';
 import Aprender from './pages/Aprender';
 import Brokers from './pages/Brokers';
 import Detalle from './pages/Detalle';
+import PorQueInvertir from './pages/PorQueInvertir';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Route path="/aprender" component={Aprender} />
       <Route path="/brokers" component={Brokers} />
       <Route path="/inversion/:ticker" component={Detalle} />
+      <Route path="/por-que-invertir" component={PorQueInvertir} />
     </Router>
   );
 }

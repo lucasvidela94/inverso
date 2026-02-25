@@ -48,6 +48,13 @@ export default function Layout(props: LayoutProps) {
               >
                 Aprender
               </A>
+              <A
+                href="/por-que-invertir"
+                class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+                activeClass="text-stone-900"
+              >
+                ¿Por qué invertir?
+              </A>
             </nav>
           </div>
         </div>
