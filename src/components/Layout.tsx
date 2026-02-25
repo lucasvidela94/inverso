@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router';
-import { JSX } from 'solid-js';
+import { JSX, createSignal } from 'solid-js';
 import ErrorBoundary from './ErrorBoundary';
 
 interface LayoutProps {
@@ -7,6 +7,16 @@ interface LayoutProps {
 }
 
 export default function Layout(props: LayoutProps) {
+  const [isMenuOpen, setIsMenuOpen] = createSignal(false);
+
+  const navLinks = [
+    { href: '/', label: 'Inicio', end: true },
+    { href: '/explorar', label: 'Explorar' },
+    { href: '/brokers', label: 'Brokers' },
+    { href: '/aprender', label: 'Aprender' },
+    { href: '/por-que-invertir', label: '¿Por qué invertir?' },
+  ];
+
   return (
     <div class="min-h-screen flex flex-col">
       <header class="sticky top-0 z-50 bg-stone-50/80 backdrop-blur-sm border-b border-stone-200">
@@ -18,45 +28,54 @@ export default function Layout(props: LayoutProps) {
               </span>
             </A>
             
-            <nav class="flex items-center gap-8">
-              <A
-                href="/"
-                class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-                activeClass="text-stone-900"
-                end
-              >
-                Inicio
-              </A>
-              <A
-                href="/explorar"
-                class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-                activeClass="text-stone-900"
-              >
-                Explorar
-              </A>
-              <A
-                href="/brokers"
-                class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-                activeClass="text-stone-900"
-              >
-                Brokers
-              </A>
-              <A
-                href="/aprender"
-                class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-                activeClass="text-stone-900"
-              >
-                Aprender
-              </A>
-              <A
-                href="/por-que-invertir"
-                class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-                activeClass="text-stone-900"
-              >
-                ¿Por qué invertir?
-              </A>
+            {/* Desktop Navigation */}
+            <nav class="hidden md:flex items-center gap-6">
+              {navLinks.map((link) => (
+                <A
+                  href={link.href}
+                  class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+                  activeClass="text-stone-900"
+                  end={link.end}
+                >
+                  {link.label}
+                </A>
+              ))}
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen())}
+              class="md:hidden p-2 text-stone-600 hover:text-stone-900 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMenuOpen() ? (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
+
+          {/* Mobile Navigation */}
+          {isMenuOpen() && (
+            <nav class="md:hidden py-4 border-t border-stone-200">
+              <div class="flex flex-col gap-4">
+                {navLinks.map((link) => (
+                  <A
+                    href={link.href}
+                    class="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors py-2"
+                    activeClass="text-stone-900"
+                    end={link.end}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.label}
+                  </A>
+                ))}
+              </div>
+            </nav>
+          )}
         </div>
       </header>
 
@@ -82,10 +101,12 @@ export default function Layout(props: LayoutProps) {
                 GitHub
               </a>
               <a 
-                href="#" 
+                href="https://cafecito.app/inverso" 
+                target="_blank"
+                rel="noopener noreferrer"
                 class="text-sm text-stone-500 hover:text-stone-900 transition-colors"
               >
-                Donar
+                Cafecito
               </a>
             </div>
           </div>
