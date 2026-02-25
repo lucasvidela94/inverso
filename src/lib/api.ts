@@ -1,6 +1,7 @@
 import type { Inversion, Indice, NewsItem } from '../types';
 
-const API_BASE_URL = 'https://inverso-api.lucasan-videla.workers.dev';
+// Usar variable de entorno o fallback a la URL de producción
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://inverso-api.lucasan-videla.workers.dev';
 
 /**
  * Cliente HTTP para la API de INVERSO
