@@ -92,14 +92,26 @@ export default function Layout(props: LayoutProps) {
               INVERSO - Información educativa, no es asesoramiento financiero
             </p>
             <div class="flex items-center gap-6">
-              <a 
-                href="https://github.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="text-sm text-stone-500 hover:text-stone-900 transition-colors"
-              >
-                GitHub
-              </a>
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-stone-400">GitHub:</span>
+                <a 
+                  href="https://github.com/lucasvidela94/inverso" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="text-sm text-stone-500 hover:text-stone-900 transition-colors"
+                >
+                  Frontend
+                </a>
+                <span class="text-stone-300">|</span>
+                <a 
+                  href="https://github.com/lucasvidela94/inverso-api" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="text-sm text-stone-500 hover:text-stone-900 transition-colors"
+                >
+                  API
+                </a>
+              </div>
               <a 
                 href="https://cafecito.app/inverso" 
                 target="_blank"
