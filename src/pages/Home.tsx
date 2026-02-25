@@ -1,13 +1,8 @@
-import { For, createSignal, createMemo } from 'solid-js';
+import { For, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
-import { 
-  getTopByRendimiento, 
-  getTopBySeguridad, 
-  getTopByLiquidez,
-  formatPorcentaje,
-  formatMoneda,
-} from '../data/inversiones';
-import type { Inversion, Vista } from '../types';
+import { useTopRendimiento, useTopSeguridad, useIndices } from '../hooks/useInversiones';
+import { formatPorcentaje, formatMoneda } from '../data/inversiones';
+import type { Inversion } from '../types';
 
 function InversionCard(props: { inversion: Inversion; rank: number }) {
   const navigate = useNavigate();
@@ -72,15 +67,11 @@ function InversionCard(props: { inversion: Inversion; rank: number }) {
           <div class="font-serif text-2xl font-medium text-emerald-700">
             {formatPorcentaje(props.inversion.tasa_anual)}
           </div>
-          <div class="text-xs text-stone-500">
-            TNA
-          </div>
+          <div class="text-xs text-stone-500">TNA</div>
           <div class="mt-2 text-sm text-stone-600">
             {formatMoneda(props.inversion.minimo_inversion, props.inversion.moneda)}
           </div>
-          <div class="text-xs text-stone-400">
-            mínimo
-          </div>
+          <div class="text-xs text-stone-400">mínimo</div>
         </div>
       </div>
     </div>
@@ -90,7 +81,8 @@ function InversionCard(props: { inversion: Inversion; rank: number }) {
 function SeccionTop(props: { 
   titulo: string; 
   descripcion: string;
-  inversiones: Inversion[];
+  inversiones: Inversion[] | undefined;
+  isLoading: boolean;
   icono: string;
 }) {
   return (
@@ -103,26 +95,56 @@ function SeccionTop(props: {
         <p class="text-stone-600">{props.descripcion}</p>
       </div>
       
-      <div class="grid gap-4">
-        <For each={props.inversiones}>
-          {(inversion, index) => (
-            <InversionCard 
-              inversion={inversion} 
-              rank={index() + 1}
-            />
-          )}
-        </For>
-      </div>
+      <Show
+        when={!props.isLoading}
+        fallback={
+          <div class="flex items-center justify-center py-12">
+            <div class="text-stone-500">Cargando...</div>
+          </div>
+        }
+      >
+        <div class="grid gap-4">
+          <For each={props.inversiones}>
+            {(inversion, index) => (
+              <InversionCard 
+                inversion={inversion} 
+                rank={index() + 1}
+              />
+            )}
+          </For>
+        </div>
+      </Show>
     </section>
   );
 }
 
-export default function Home() {
-  const [vista, setVista] = createSignal<Vista>('rendimiento');
+function IndicesWidget() {
+  const indices = useIndices();
   
-  const topRendimiento = createMemo(() => getTopByRendimiento(5));
-  const topSeguridad = createMemo(() => getTopBySeguridad(5));
-  const topLiquidez = createMemo(() => getTopByLiquidez(5));
+  return (
+    <Show when={!indices.isLoading && indices.data}>
+      <div class="grid grid-cols-3 gap-4 py-8 border-b border-stone-200">
+        <For each={indices.data}>
+          {(indice) => (
+            <div class="text-center p-4 bg-stone-50 rounded-lg">
+              <div class="text-sm text-stone-500 mb-1">{indice.nombre}</div>
+              <div class="font-serif text-xl font-medium text-stone-900">
+                {indice.valor.toLocaleString('es-AR')}
+              </div>
+              <div class={`text-sm ${indice.variacion >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {indice.variacion >= 0 ? '+' : ''}{indice.variacion}%
+              </div>
+            </div>
+          )}
+        </For>
+      </div>
+    </Show>
+  );
+}
+
+export default function Home() {
+  const topRendimiento = useTopRendimiento(5);
+  const topSeguridad = useTopSeguridad(5);
 
   return (
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -151,15 +173,18 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Índices */}
+      <IndicesWidget />
+
       {/* Stats */}
       <section class="py-12 border-b border-stone-200">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
-            <div class="font-serif text-3xl font-medium text-stone-900">6</div>
+            <div class="font-serif text-3xl font-medium text-stone-900">10</div>
             <div class="text-sm text-stone-500">Inversiones activas</div>
           </div>
           <div>
-            <div class="font-serif text-3xl font-medium text-stone-900">8.0%</div>
+            <div class="font-serif text-3xl font-medium text-stone-900">45%</div>
             <div class="text-sm text-stone-500">Máximo rendimiento</div>
           </div>
           <div>
@@ -177,22 +202,17 @@ export default function Home() {
       <SeccionTop
         titulo="Top Rendimiento"
         descripcion="Las inversiones con mayor tasa de retorno anual"
-        inversiones={topRendimiento()}
+        inversiones={topRendimiento.data}
+        isLoading={topRendimiento.isLoading}
         icono="📈"
       />
 
       <SeccionTop
         titulo="Top Seguridad"
         descripcion="Las inversiones con mejor calificación crediticia"
-        inversiones={topSeguridad()}
+        inversiones={topSeguridad.data}
+        isLoading={topSeguridad.isLoading}
         icono="🛡️"
-      />
-
-      <SeccionTop
-        titulo="Top Liquidez"
-        descripcion="Las inversiones más fáciles de comprar y vender"
-        inversiones={topLiquidez()}
-        icono="💧"
       />
 
       {/* CTA */}

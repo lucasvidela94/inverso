@@ -1,6 +1,7 @@
-import { For, createSignal, createMemo } from 'solid-js';
+import { For, createSignal, createMemo, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
-import { inversionesMock, formatPorcentaje, formatMoneda, formatFecha } from '../data/inversiones';
+import { useInversiones } from '../hooks/useInversiones';
+import { formatPorcentaje, formatMoneda } from '../data/inversiones';
 import type { Inversion, Filtros } from '../types';
 
 const filtrosDisponibles = {
@@ -93,11 +94,14 @@ function InversionRow(props: { inversion: Inversion }) {
 }
 
 export default function Explorar() {
+  const inversionesQuery = useInversiones();
   const [filtros, setFiltros] = createSignal<Filtros>({});
   const [busqueda, setBusqueda] = createSignal('');
 
   const inversionesFiltradas = createMemo(() => {
-    return inversionesMock.filter(inv => {
+    if (!inversionesQuery.data) return [];
+    
+    return inversionesQuery.data.filter(inv => {
       if (!inv.esta_activa) return false;
       
       const f = filtros();
@@ -138,100 +142,111 @@ export default function Explorar() {
         </p>
       </div>
 
-      {/* Busqueda */}
-      <div class="mb-6">
-        <input
-          type="text"
-          placeholder="Buscar por emisor, ticker o sector..."
-          value={busqueda()}
-          onInput={(e) => setBusqueda(e.currentTarget.value)}
-          class="w-full px-4 py-3 text-base bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-transparent"
-        />
-      </div>
+      <Show
+        when={!inversionesQuery.isLoading}
+        fallback={
+          <div class="flex items-center justify-center py-16">
+            <div class="text-stone-500">Cargando inversiones...</div>
+          </div>
+        }
+      >
+        <>
+          {/* Busqueda */}
+          <div class="mb-6">
+            <input
+              type="text"
+              placeholder="Buscar por emisor, ticker o sector..."
+              value={busqueda()}
+              onInput={(e) => setBusqueda(e.currentTarget.value)}
+              class="w-full px-4 py-3 text-base bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-transparent"
+            />
+          </div>
 
-      {/* Filtros */}
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 p-4 bg-stone-100 rounded-lg">
-        <div>
-          <label class="block text-sm font-medium text-stone-700 mb-1">Moneda</label>
-          <select
-            value={filtros().moneda || ''}
-            onChange={(e) => updateFiltro('moneda', e.currentTarget.value)}
-            class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
-          >
-            <For each={filtrosDisponibles.moneda}>
-              {(opt) => <option value={opt.value}>{opt.label}</option>}
+          {/* Filtros */}
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 p-4 bg-stone-100 rounded-lg">
+            <div>
+              <label class="block text-sm font-medium text-stone-700 mb-1">Moneda</label>
+              <select
+                value={filtros().moneda || ''}
+                onChange={(e) => updateFiltro('moneda', e.currentTarget.value)}
+                class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
+              >
+                <For each={filtrosDisponibles.moneda}>
+                  {(opt) => <option value={opt.value}>{opt.label}</option>}
+                </For>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-stone-700 mb-1">Riesgo</label>
+              <select
+                value={filtros().riesgo || ''}
+                onChange={(e) => updateFiltro('riesgo', e.currentTarget.value)}
+                class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
+              >
+                <For each={filtrosDisponibles.riesgo}>
+                  {(opt) => <option value={opt.value}>{opt.label}</option>}
+                </For>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-stone-700 mb-1">Plazo</label>
+              <select
+                value={filtros().plazo || ''}
+                onChange={(e) => updateFiltro('plazo', e.currentTarget.value)}
+                class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
+              >
+                <For each={filtrosDisponibles.plazo}>
+                  {(opt) => <option value={opt.value}>{opt.label}</option>}
+                </For>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-stone-700 mb-1">Calificación</label>
+              <select
+                value={filtros().calificacion || ''}
+                onChange={(e) => updateFiltro('calificacion', e.currentTarget.value)}
+                class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
+              >
+                <For each={filtrosDisponibles.calificacion}>
+                  {(opt) => <option value={opt.value}>{opt.label}</option>}
+                </For>
+              </select>
+            </div>
+          </div>
+
+          {/* Resultados */}
+          <div class="mb-4 flex items-center justify-between">
+            <span class="text-sm text-stone-600">
+              {inversionesFiltradas().length} resultados
+            </span>
+            
+            <button
+              onClick={() => {
+                setFiltros({});
+                setBusqueda('');
+              }}
+              class="text-sm text-stone-500 hover:text-stone-900 transition-colors"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+
+          <div class="grid gap-3">
+            <For each={inversionesFiltradas()}>
+              {(inversion) => <InversionRow inversion={inversion} />}
             </For>
-          </select>
-        </div>
+          </div>
 
-        <div>
-          <label class="block text-sm font-medium text-stone-700 mb-1">Riesgo</label>
-          <select
-            value={filtros().riesgo || ''}
-            onChange={(e) => updateFiltro('riesgo', e.currentTarget.value)}
-            class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
-          >
-            <For each={filtrosDisponibles.riesgo}>
-              {(opt) => <option value={opt.value}>{opt.label}</option>}
-            </For>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-stone-700 mb-1">Plazo</label>
-          <select
-            value={filtros().plazo || ''}
-            onChange={(e) => updateFiltro('plazo', e.currentTarget.value)}
-            class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
-          >
-            <For each={filtrosDisponibles.plazo}>
-              {(opt) => <option value={opt.value}>{opt.label}</option>}
-            </For>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-stone-700 mb-1">Calificación</label>
-          <select
-            value={filtros().calificacion || ''}
-            onChange={(e) => updateFiltro('calificacion', e.currentTarget.value)}
-            class="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-stone-900"
-          >
-            <For each={filtrosDisponibles.calificacion}>
-              {(opt) => <option value={opt.value}>{opt.label}</option>}
-            </For>
-          </select>
-        </div>
-      </div>
-
-      {/* Resultados */}
-      <div class="mb-4 flex items-center justify-between">
-        <span class="text-sm text-stone-600">
-          {inversionesFiltradas().length} resultados
-        </span>
-        
-        <button
-          onClick={() => {
-            setFiltros({});
-            setBusqueda('');
-          }}
-          class="text-sm text-stone-500 hover:text-stone-900 transition-colors"
-        >
-          Limpiar filtros
-        </button>
-      </div>
-
-      <div class="grid gap-3">
-        <For each={inversionesFiltradas()}>
-          {(inversion) => <InversionRow inversion={inversion} />}
-        </For>
-      </div>
-
-      {inversionesFiltradas().length === 0 && (
-        <div class="text-center py-16">
-          <p class="text-stone-500">No se encontraron inversiones con esos filtros</p>
-        </div>
-      )}
+          {inversionesFiltradas().length === 0 && (
+            <div class="text-center py-16">
+              <p class="text-stone-500">No se encontraron inversiones con esos filtros</p>
+            </div>
+          )}
+        </>
+      </Show>
     </div>
   );
 }

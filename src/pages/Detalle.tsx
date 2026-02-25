@@ -1,36 +1,19 @@
 import { createSignal, Show, For, createMemo } from 'solid-js';
 import { useParams, A } from '@solidjs/router';
-import { getInversionByTicker, formatPorcentaje, formatMoneda, formatFecha } from '../data/inversiones';
+import { useInversion } from '../hooks/useInversiones';
 import { getBrokers } from '../data/brokers';
+import { formatPorcentaje, formatMoneda, formatFecha } from '../data/inversiones';
 
 export default function Detalle() {
   const params = useParams();
-  
-  // En SolidJS v0.15, useParams devuelve un proxy reactivo
-  // Accedemos directamente a la propiedad
-  const ticker = () => {
-    const t = params.ticker;
-    console.log('Ticker from params:', t);
-    return t;
-  };
-  
-  // Usamos createMemo para memoizar la búsqueda
-  const inversion = createMemo(() => {
-    const t = ticker();
-    if (!t) {
-      console.log('No ticker available');
-      return undefined;
-    }
-    const inv = getInversionByTicker(t);
-    console.log('Found inversion:', inv?.ticker, inv?.tasa_anual);
-    return inv;
-  });
+  const ticker = () => params.ticker;
+  const inversionQuery = useInversion(ticker);
   
   const [monto, setMonto] = createSignal(10000);
 
   // Proyección de rendimiento
   const proyeccion = createMemo(() => {
-    const inv = inversion();
+    const inv = inversionQuery.data;
     if (!inv) return null;
     
     const interesAnual = monto() * (inv.tasa_anual / 100);
@@ -47,7 +30,7 @@ export default function Detalle() {
 
   // Color según riesgo
   const colorRiesgo = createMemo(() => {
-    const inv = inversion();
+    const inv = inversionQuery.data;
     if (!inv) return '';
     switch (inv.riesgo) {
       case 'bajo': return 'text-emerald-700 bg-emerald-50';
@@ -59,29 +42,27 @@ export default function Detalle() {
 
   return (
     <Show
-      when={inversion()}
+      when={!inversionQuery.isLoading && inversionQuery.data}
       keyed
       fallback={
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div class="text-center">
-            <h1 class="font-serif text-2xl font-medium text-stone-900 mb-4">
-              Inversión no encontrada
-            </h1>
-            <p class="text-stone-600 mb-4">
-              Ticker: {ticker() || 'no disponible'}
-            </p>
-            <A href="/explorar" class="text-stone-600 hover:text-stone-900">
-              Volver al explorador
-            </A>
-          </div>
-        </div>
-      }
-    >
-      {(inv) => {
-        // Debug: verificar que tenemos todos los datos
-        console.log('Rendering inversion:', inv.ticker, 'tasa:', inv.tasa_anual);
-        
-        return (
+             <h1 class="font-serif text-2xl font-medium text-stone-900 mb-4">
+               {inversionQuery.isLoading ? 'Cargando...' : 'Inversión no encontrada'}
+             </h1>
+             <p class="text-stone-600 mb-4">
+               Ticker: {ticker() || 'no disponible'}
+             </p>
+             <A href="/explorar" class="text-stone-600 hover:text-stone-900">
+               Volver al explorador
+             </A>
+           </div>
+         </div>
+       }
+     >
+       {(inv) => {
+         
+         return (
           <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             {/* Header */}
             <div class="mb-8">
