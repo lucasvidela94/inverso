@@ -15,6 +15,7 @@ export default function Layout(props: LayoutProps) {
     { href: '/brokers', label: 'Brokers' },
     { href: '/aprender', label: 'Aprender' },
     { href: '/por-que-invertir', label: '¿Por qué invertir?' },
+    { href: '/preguntas', label: 'Preguntas' },
   ];
 
   return (
