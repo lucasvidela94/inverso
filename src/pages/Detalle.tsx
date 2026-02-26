@@ -1,15 +1,17 @@
 import { createSignal, Show, For, createMemo } from 'solid-js';
 import { useParams, A } from '@solidjs/router';
 import { useInversion } from '../hooks/useInversiones';
-import { getBrokers } from '../data/brokers';
+import { getBrokers, calcularComision } from '../data/brokers';
 import { formatPorcentaje, formatMoneda, formatFecha } from '../data/inversiones';
 
 export default function Detalle() {
   const params = useParams();
-  const ticker = () => params.ticker;
+  const ticker = () => params.ticker || '';
   const inversionQuery = useInversion(ticker);
   
   const [monto, setMonto] = createSignal(10000);
+  const [volumenMensual, setVolumenMensual] = createSignal(0);
+  const [brokerSeleccionado, setBrokerSeleccionado] = createSignal('iol');
 
   // Proyección de rendimiento
   const proyeccion = createMemo(() => {
@@ -167,7 +169,7 @@ export default function Detalle() {
               <div class="p-6 bg-white border border-stone-200 rounded-lg">
                 <h2 class="font-serif text-xl font-medium text-stone-900 mb-4">Calculadora</h2>
                 
-                <div class="mb-6">
+                <div class="mb-4">
                   <label class="block text-sm text-stone-600 mb-2">
                     Monto a invertir ({inv.moneda === 'ARS' ? '$' : 'U$S'})
                   </label>
@@ -178,6 +180,38 @@ export default function Detalle() {
                     onInput={(e) => setMonto(Number(e.currentTarget.value))}
                     class="w-full px-4 py-3 text-lg bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900"
                   />
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm text-stone-600 mb-2">
+                    Volumen mensual operado ({inv.moneda === 'ARS' ? '$' : 'U$S'})
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={volumenMensual()}
+                    onInput={(e) => setVolumenMensual(Number(e.currentTarget.value))}
+                    placeholder="0"
+                    class="w-full px-4 py-2 text-base bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900"
+                  />
+                  <p class="text-xs text-stone-500 mt-1">
+                    Afecta las comisiones en brokers con descuentos por volumen
+                  </p>
+                </div>
+
+                <div class="mb-6">
+                  <label class="block text-sm text-stone-600 mb-2">Broker</label>
+                  <select
+                    value={brokerSeleccionado()}
+                    onChange={(e) => setBrokerSeleccionado(e.currentTarget.value)}
+                    class="w-full px-4 py-2 text-base bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900"
+                  >
+                    <For each={getBrokers()}>
+                      {(broker) => (
+                        <option value={broker.id}>{broker.nombre}</option>
+                      )}
+                    </For>
+                  </select>
                 </div>
 
                 <div class="space-y-3 pt-4 border-t border-stone-200">
@@ -195,17 +229,24 @@ export default function Detalle() {
                     </span>
                   </div>
                   
+                  <div class="flex justify-between text-sm">
+                    <span class="text-stone-500">Comisión broker (aprox.)</span>
+                    <span class="text-amber-600">
+                      -{formatMoneda(calcularComision(brokerSeleccionado(), 'titulos_publicos', monto(), volumenMensual()), inv.moneda)}
+                    </span>
+                  </div>
+                  
                   <div class="flex justify-between pt-3 border-t border-stone-200">
                     <span class="font-medium">Total al vencimiento</span>
                     <span class="font-serif text-xl font-medium text-emerald-700">
-                      {formatMoneda(proyeccion()?.total || 0, inv.moneda)}
+                      {formatMoneda((proyeccion()?.total || 0) - calcularComision(brokerSeleccionado(), 'titulos_publicos', monto(), volumenMensual()), inv.moneda)}
                     </span>
                   </div>
                   
                   <div class="flex justify-between text-sm">
-                    <span class="text-stone-500">Retorno total</span>
+                    <span class="text-stone-500">Retorno neto</span>
                     <span class="text-emerald-700">
-                      +{formatPorcentaje(proyeccion()?.retorno || 0)}
+                      +{formatPorcentaje(((proyeccion()?.totalIntereses || 0) - calcularComision(brokerSeleccionado(), 'titulos_publicos', monto(), volumenMensual())) / monto() * 100)}
                     </span>
                   </div>
                 </div>
@@ -237,8 +278,8 @@ export default function Detalle() {
                       <div>
                         <div class="font-medium text-stone-900">{broker.nombre}</div>
                         <div class="text-sm text-stone-500">
-                          Comisión: {broker.comisiones.mercado_nacional}
-                        </div>
+                           Comisión: {broker.comisiones_display.mercado_nacional}
+                         </div>
                       </div>
                       <svg class="w-5 h-5 text-stone-400" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -248,7 +289,7 @@ export default function Detalle() {
                 </For>
               </div>
               <p class="mt-4 text-sm text-stone-500">
-                Los links pueden ser de afiliados. Esto no aumenta tu costo y nos ayuda a mantener INVERSO gratuito.
+                Las comisiones mostradas son estimaciones. Verificá los valores actualizados directamente con cada broker.
               </p>
             </div>
 
